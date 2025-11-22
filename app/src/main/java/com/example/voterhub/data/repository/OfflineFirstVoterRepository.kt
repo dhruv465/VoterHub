@@ -37,6 +37,10 @@ class OfflineFirstVoterRepository @Inject constructor(
         if (!shouldFetch) return@withContext
         val sections = api.getSections()
         sectionDao.upsertSections(sections.map { it.toEntity() })
+        val prabhags = sections.flatMap { section ->
+            section.prabhags.map { it.toEntity(sectionId = section.id) }
+        }
+        sectionDao.upsertPrabhags(prabhags)
     }
 
     override suspend fun fetchVoters(query: VoterQuery): VoterListPage = withContext(ioDispatcher) {
@@ -47,6 +51,7 @@ class OfflineFirstVoterRepository @Inject constructor(
         }.getOrElse {
             val voters = voterDao.queryVoters(
                 sectionId = query.sectionId,
+                prabhagId = query.prabhagId,
                 query = query.searchQuery,
                 ageMin = query.ageMin,
                 ageMax = query.ageMax,
@@ -56,6 +61,7 @@ class OfflineFirstVoterRepository @Inject constructor(
             ).map { it.toDomain() }
             val total = voterDao.countVoters(
                 sectionId = query.sectionId,
+                prabhagId = query.prabhagId,
                 query = query.searchQuery,
                 ageMin = query.ageMin,
                 ageMax = query.ageMax,

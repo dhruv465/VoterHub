@@ -11,10 +11,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.voterhub.ui.screens.HomeScreen
 import com.example.voterhub.ui.screens.LanguageSelectionScreen
 import com.example.voterhub.ui.screens.VoterListScreen
 import com.example.voterhub.ui.screens.WelcomeScreen
 import com.example.voterhub.ui.theme.VoterHubTheme
+import com.example.voterhub.ui.viewmodel.HomeViewModel
 import com.example.voterhub.ui.viewmodel.VoterListViewModel
 
 @Composable
@@ -51,20 +53,42 @@ fun VoterHubApp() {
             LanguageSelectionScreen(
                 onLanguageSelected = { language ->
                     // You might want to save the language preference here
-                    navController.navigate("voter_list") {
+                    navController.navigate("home") {
                         popUpTo("language_selection") { inclusive = true }
                     }
                 }
             )
         }
 
-        composable("voter_list") {
+        composable("home") {
+            val viewModel: HomeViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+            HomeScreen(
+                state = state,
+                onSectionSelected = viewModel::onSectionSelected,
+                onVillageSelected = { sectionId, prabhagId ->
+                    navController.navigate("voter_list/$sectionId?prabhagId=$prabhagId")
+                },
+                onPullToRefresh = viewModel::refreshSections
+            )
+        }
+
+        composable(
+            route = "voter_list/{sectionId}?prabhagId={prabhagId}",
+            arguments = listOf(
+                androidx.navigation.navArgument("sectionId") { type = androidx.navigation.NavType.StringType },
+                androidx.navigation.navArgument("prabhagId") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                }
+            )
+        ) {
             val viewModel: VoterListViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsStateWithLifecycle()
 
             VoterListScreen(
                 state = state,
-                onSectionSelected = viewModel::onSectionSelected,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onRecentSearchSelected = viewModel::onRecentSearchSelected,
                 onAgeRangeSelected = viewModel::onAgeRangeSelected,
@@ -74,7 +98,8 @@ fun VoterHubApp() {
                 onClearFilters = viewModel::clearFilters,
                 onToggleFilterSheet = viewModel::toggleFilterSheet,
                 onLoadNextPage = viewModel::loadNextPage,
-                onPullToRefresh = viewModel::onPullToRefresh
+                onPullToRefresh = viewModel::onPullToRefresh,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

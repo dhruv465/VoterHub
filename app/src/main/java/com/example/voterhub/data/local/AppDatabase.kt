@@ -6,13 +6,15 @@ import com.example.voterhub.data.local.dao.SectionDao
 import com.example.voterhub.data.local.dao.VoterDao
 import com.example.voterhub.data.local.entity.SectionEntity
 import com.example.voterhub.data.local.entity.VoterEntity
+import com.example.voterhub.data.local.entity.PrabhagEntity
 
 @Database(
     entities = [
         SectionEntity::class,
-        VoterEntity::class
+        VoterEntity::class,
+        PrabhagEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

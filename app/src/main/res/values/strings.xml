@@ -46,4 +46,7 @@ Cast your vote.</string>
     <string name="area">Area</string>
     <string name="house_no">House No</string>
     <string name="relative">Relative</string>
+    <string name="select_village">Select Village</string>
+    <string name="voter_list_title">Voter List</string>
+    <string name="back">Back</string>
 </resources>

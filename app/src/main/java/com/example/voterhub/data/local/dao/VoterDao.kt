@@ -13,6 +13,7 @@ interface VoterDao {
         """
         SELECT * FROM voters
         WHERE sectionId = :sectionId
+          AND (:prabhagId IS NULL OR prabhagId = :prabhagId)
           AND (:query IS NULL OR :query = '' OR LOWER(fullName) LIKE '%' || LOWER(:query) || '%' OR LOWER(relativeName) LIKE '%' || LOWER(:query) || '%' OR LOWER(voterId) LIKE '%' || LOWER(:query) || '%')
           AND (:ageMin IS NULL OR age >= :ageMin)
           AND (:ageMax IS NULL OR age <= :ageMax)
@@ -23,6 +24,7 @@ interface VoterDao {
     )
     suspend fun queryVoters(
         sectionId: String,
+        prabhagId: String?,
         query: String?,
         ageMin: Int?,
         ageMax: Int?,
@@ -35,6 +37,7 @@ interface VoterDao {
         """
         SELECT COUNT(*) FROM voters
         WHERE sectionId = :sectionId
+          AND (:prabhagId IS NULL OR prabhagId = :prabhagId)
           AND (:query IS NULL OR :query = '' OR LOWER(fullName) LIKE '%' || LOWER(:query) || '%' OR LOWER(relativeName) LIKE '%' || LOWER(:query) || '%')
           AND (:ageMin IS NULL OR age >= :ageMin)
           AND (:ageMax IS NULL OR age <= :ageMax)
@@ -43,6 +46,7 @@ interface VoterDao {
     )
     suspend fun countVoters(
         sectionId: String,
+        prabhagId: String?,
         query: String?,
         ageMin: Int?,
         ageMax: Int?,

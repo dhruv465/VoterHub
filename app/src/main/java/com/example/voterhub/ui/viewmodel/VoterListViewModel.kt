@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class VoterListViewModel @Inject constructor(
     private val voterRepository: VoterRepository,
     private val searchHistoryRepository: SearchHistoryRepository,
-    private val syncStatusTracker: SyncStatusTracker
+    savedStateHandle: androidx.lifecycle.SavedStateHandle
 ) : ViewModel() {
 
     companion object {
@@ -41,7 +41,10 @@ class VoterListViewModel @Inject constructor(
         )
     }
 
-    private val _uiState = MutableStateFlow(VoterListUiState())
+    private val sectionId: String = checkNotNull(savedStateHandle["sectionId"])
+    private val prabhagId: String? = savedStateHandle["prabhagId"]
+
+    private val _uiState = MutableStateFlow(VoterListUiState(selectedSectionId = sectionId))
     val uiState: StateFlow<VoterListUiState> = _uiState.asStateFlow()
 
     private var currentPage = 1
@@ -49,35 +52,8 @@ class VoterListViewModel @Inject constructor(
     private var searchDebounceJob: Job? = null
 
     init {
-        observeSections()
         observeSearchHistory()
-        refreshSections()
-    }
-
-    private fun observeSections() {
-        viewModelScope.launch {
-            voterRepository.observeSections()
-                .combine(searchHistoryRepository.lastSectionId) { sections, lastSection ->
-                    sections to lastSection
-                }
-                .collectLatest { (sections, lastSection) ->
-                    val selected = lastSection ?: _uiState.value.selectedSectionId ?: sections.firstOrNull()?.id
-                    _uiState.update {
-                        it.copy(
-                            sections = sections,
-                            selectedSectionId = selected,
-                            sectionDemographics = sections.firstOrNull { section -> section.id == selected }?.demographics,
-                            isLoading = sections.isEmpty()
-                        )
-                    }
-                    if (sections.isNotEmpty()) {
-                        if (lastSection == null && selected != null) {
-                            searchHistoryRepository.saveLastSection(selected)
-                        }
-                        loadFirstPage()
-                    }
-                }
-        }
+        loadFirstPage()
     }
 
     private fun observeSearchHistory() {
@@ -86,34 +62,6 @@ class VoterListViewModel @Inject constructor(
                 _uiState.update { it.copy(recentSearches = searches) }
             }
         }
-    }
-
-    fun refreshSections(forceNetwork: Boolean = false) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
-            voterRepository.refreshSections(forceNetwork)
-            if (forceNetwork) {
-                syncStatusTracker.triggerImmediateSync()
-            }
-            _uiState.update { it.copy(isRefreshing = false) }
-            loadFirstPage()
-        }
-    }
-
-    fun onSectionSelected(sectionId: String) {
-        if (sectionId == _uiState.value.selectedSectionId) return
-        viewModelScope.launch {
-            searchHistoryRepository.saveLastSection(sectionId)
-        }
-        _uiState.update {
-            it.copy(
-                selectedSectionId = sectionId,
-                sectionDemographics = it.sections.firstOrNull { section -> section.id == sectionId }?.demographics,
-                voters = emptyList(),
-                totalCount = 0
-            )
-        }
-        loadFirstPage()
     }
 
     fun onSearchQueryChange(query: String) {
@@ -178,7 +126,7 @@ class VoterListViewModel @Inject constructor(
     }
 
     fun onPullToRefresh() {
-        refreshSections(forceNetwork = true)
+        loadFirstPage()
     }
 
     private fun loadFirstPage() {
@@ -187,7 +135,6 @@ class VoterListViewModel @Inject constructor(
     }
 
     private fun loadPage(reset: Boolean) {
-        val sectionId = _uiState.value.selectedSectionId ?: return
         if (isPageLoading) return
         viewModelScope.launch {
             isPageLoading = true
@@ -197,6 +144,7 @@ class VoterListViewModel @Inject constructor(
             val filter = _uiState.value.filterState
             val query = VoterQuery(
                 sectionId = sectionId,
+                prabhagId = prabhagId,
                 page = currentPage,
                 pageSize = PAGE_SIZE,
                 searchQuery = filter.searchQuery,

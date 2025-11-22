@@ -47,6 +47,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
@@ -143,7 +144,6 @@ import java.util.Locale
 @Composable
 fun VoterListScreen(
     state: VoterListUiState,
-    onSectionSelected: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onRecentSearchSelected: (String) -> Unit,
     onAgeRangeSelected: (AgeRange?) -> Unit,
@@ -154,6 +154,7 @@ fun VoterListScreen(
     onPullToRefresh: () -> Unit,
     onCustomAgeRangeSelected: (String, String) -> Unit,
     onClearCustomAgeRangeError: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val pullRefreshState = rememberPullRefreshState(
@@ -174,8 +175,6 @@ fun VoterListScreen(
     }
 
     var selectedVoter by remember { mutableStateOf<Voter?>(null) }
-    var showPrabhags by remember { mutableStateOf(false) }
-    var selectedPrabhagName by remember { mutableStateOf("") }
 
     val backdrop = remember {
         Brush.verticalGradient(
@@ -188,10 +187,11 @@ fun VoterListScreen(
 
     Scaffold(
         topBar = {
-            VoterHubTopBar(
+            VoterListTopBar(
                 hasActiveFilters = state.filterState.activeFilterCount > 0,
                 onRefresh = onPullToRefresh,
-                onOpenFilters = { onToggleFilterSheet(true) }
+                onOpenFilters = { onToggleFilterSheet(true) },
+                onBackClick = onBackClick
             )
         },
         containerColor = Color.Transparent,
@@ -223,8 +223,8 @@ fun VoterListScreen(
                     }
                 }
                 
-                if (state.isLoading && state.sections.isEmpty()) {
-                    // Show loading spinner while sections are being fetched
+                if (state.isLoading && state.voters.isEmpty()) {
+                    // Show loading spinner while voters are being fetched
                     item {
                         Box(
                             modifier = Modifier
@@ -235,27 +235,10 @@ fun VoterListScreen(
                             CircularProgressIndicator()
                         }
                     }
-                } else if (state.sections.isNotEmpty()) {
-                    // Sections are loaded, show the UI
-                    item {
-                        StaggeredAnimatedItem(index = 0) {
-                            PromotionBanner()
-                        }
-                    }
-                    item {
-                        StaggeredAnimatedItem(index = 0) {
-                            HeroHeader(
-                                sections = state.sections,
-                                selectedSectionId = state.selectedSectionId,
-                                total = state.totalCount,
-                                demographics = state.sectionDemographics,
-                                onSectionSelected = onSectionSelected
-                            )
-                        }
-                    }
+                } else {
                     itemsIndexed(state.voters, key = { _, voter -> voter.id }) { index, voter ->
                         if (!state.isRefreshing) {
-                            StaggeredAnimatedItem(index = index + 1) {
+                            StaggeredAnimatedItem(index = index) {
                                 VoterCard(
                                     voter = voter,
                                     onClick = { selectedVoter = voter }
@@ -335,19 +318,22 @@ fun VoterListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun VoterHubTopBar(
+private fun VoterListTopBar(
     hasActiveFilters: Boolean,
     onRefresh: () -> Unit,
-    onOpenFilters: () -> Unit
+    onOpenFilters: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     CenterAlignedTopAppBar(
         title = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(id = R.string.voter_hub_title), style = MaterialTheme.typography.titleLarge, color = DeepNavy)
-                Text(
-                    text = stringResource(id = R.string.voter_hub_subtitle),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Text(stringResource(id = R.string.voter_list_title), style = MaterialTheme.typography.titleLarge, color = DeepNavy)
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(id = R.string.back),
+                    tint = DeepNavy
                 )
             }
         },
@@ -382,210 +368,6 @@ private fun VoterHubTopBar(
             scrolledContainerColor = Color.Transparent
         )
     )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun HeroHeader(
-    sections: List<Section>,
-    selectedSectionId: String?,
-    total: Int,
-    demographics: SectionDemographics?,
-    onSectionSelected: (String) -> Unit
-) {
-    var showPrabhagTab by remember { mutableStateOf(false) }
-    
-    Card(
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        shape = MaterialTheme.shapes.extraLarge
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Text(stringResource(id = R.string.voter_overview), style = MaterialTheme.typography.labelLarge, color = DeepNavy)
-            Text(
-                text = "%,d".format(total),
-                style = MaterialTheme.typography.displayLarge,
-                color = DeepNavy
-            )
-            Spacer(Modifier.height(12.dp))
-            if (demographics != null) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    QuickStatChip(stringResource(id = R.string.male), "${demographics.malePercentage}%", AmberGlow)
-                    QuickStatChip(stringResource(id = R.string.female), "${demographics.femalePercentage}%", GentleLavender)
-                    QuickStatChip(stringResource(id = R.string.avg_age), "${demographics.avgAge}", AquaTeal)
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            
-            // Tabs for sections and prabhags
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Sections tabs
-                sections.forEach { section ->
-                    val isSelected = section.id == selectedSectionId
-                    Card(
-                        onClick = { 
-                            onSectionSelected(section.id)
-                            showPrabhagTab = false
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) IndiaGreen else MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = if (isSelected) 8.dp else 2.dp,
-                            pressedElevation = 4.dp
-                        ),
-                        modifier = Modifier.height(48.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                section.name,
-                                color = if (isSelected) Color.White else DeepNavy,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-            }
-            
-            // Show Prabhags if a section is selected
-            selectedSectionId?.let { sectionId ->
-                val selectedSection = sections.find { it.id == sectionId }
-                selectedSection?.prabhags?.let { prabhags ->
-                    if (prabhags.isNotEmpty()) {
-                        Spacer(Modifier.height(12.dp))
-                        // Prabhag cards
-                        Column {
-                            Text(
-                                "Villages (Prabhags)",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = DeepNavy,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                prabhags.forEach { prabhag ->
-                                    AssistChip(
-                                        onClick = { /* Will be handled by parent */ },
-                                        label = { Text(prabhag.name) },
-                                        modifier = Modifier.height(36.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PromotionBanner() {
-    val pagerState = rememberPagerState(pageCount = { 3 })
-    
-    Box(modifier = Modifier
-        .height(200.dp)
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(16.dp))
-        ) { page ->
-            val color = when (page) {
-                0 -> PromotionRed
-                1 -> PromotionBlue
-                else -> PromotionYellow
-            }
-            val text = when (page) {
-                0 -> stringResource(id = R.string.promotion_banner_1)
-                1 -> stringResource(id = R.string.promotion_banner_2)
-                else -> stringResource(id = R.string.promotion_banner_3)
-            }
-            
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-        
-        // Pager Indicator
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            repeat(3) { iteration ->
-                val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
-                Box(
-                    modifier = Modifier
-                        .padding(2.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                        .size(8.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickStatChip(label: String, value: String, chipColor: Color) {
-    Column(horizontalAlignment = Alignment.Start) {
-        Surface(
-            color = chipColor,
-            shape = RoundedCornerShape(24.dp),
-            tonalElevation = 0.dp
-        ) {
-            Text(
-                text = label,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = DeepNavy
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineMedium,
-            color = DeepNavy
-        )
-    }
 }
 
 @Composable
