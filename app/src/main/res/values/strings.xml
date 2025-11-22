@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">VoterHub</string>
+    <string name="back_to_top">Back to top</string>
+    <string name="voter_hub_title">VoterHub</string>
+    <string name="voter_hub_subtitle">Empowering every voter</string>
+    <string name="refresh">Refresh</string>
+    <string name="filters">Filters</string>
+    <string name="voter_overview">Voter overview</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="avg_age">Avg age</string>
+    <string name="promotion_banner_1">Vote for Change!
+Your voice matters.</string>
+    <string name="promotion_banner_2">Election Day is Coming
+Check your polling station.</string>
+    <string name="promotion_banner_3">Be a Responsible Citizen
+Cast your vote.</string>
+    <string name="search_here">Search here...</string>
+    <string name="clear_search">Clear search</string>
+    <string name="search_filter_label">Search: %1$s</string>
+    <string name="age_filter_label">Age: %1$s</string>
+    <string name="gender_filter_label">Gender: %1$s</string>
+    <string name="clear_all_filters">Clear all filters</string>
+    <string name="years_old">%1$d yrs</string>
+    <string name="house_no_label">House No: %1$s</string>
+    <string name="voter_id_label">ID: %1$s</string>
+    <string name="no_voters_found">No voters found</string>
+    <string name="try_adjusting_filters">Try adjusting your search or filters</string>
+    <string name="error_message">Oops! Something went wrong</string>
+    <string name="retry">Retry</string>
+    <string name="filter_by_age">Filter by age</string>
+    <string name="custom_range">Custom range</string>
+    <string name="min_age">Min</string>
+    <string name="max_age">Max</string>
+    <string name="enter_valid_age">Enter valid age numbers</string>
+    <string name="min_less_than_max">Minimum should be less than maximum</string>
+    <string name="min_age_18">Minimum age must be 18+</string>
+    <string name="apply_custom_range">Apply custom range</string>
+    <string name="filter_by_gender">Filter by gender</string>
+    <string name="all">All</string>
+    <string name="reset">Reset</string>
+    <string name="done">Done</string>
+    <string name="age">Age</string>
+    <string name="gender">Gender</string>
+    <string name="voter_id">Voter ID</string>
+    <string name="area">Area</string>
+    <string name="house_no">House No</string>
+    <string name="relative">Relative</string>
+</resources>
