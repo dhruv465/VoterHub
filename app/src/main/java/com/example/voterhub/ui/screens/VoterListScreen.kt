@@ -211,14 +211,35 @@ fun VoterListScreen(
             ) {
                 stickyHeader {
                     Column(
-                        modifier = Modifier
-                            .background(backdrop)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        SearchBar(
-                            query = state.filterState.searchQuery,
-                            onQueryChange = onSearchQueryChange,
-                            onClear = { onSearchQueryChange("") },
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                        // Opaque background for the search bar part
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(SoftCream)
+                        ) {
+                            SearchBar(
+                                query = state.filterState.searchQuery,
+                                onQueryChange = onSearchQueryChange,
+                                onClear = { onSearchQueryChange("") },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                        }
+                        
+                        // Gradient fade at the bottom to soften the edge
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            SoftCream,
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
                         )
                     }
                 }
